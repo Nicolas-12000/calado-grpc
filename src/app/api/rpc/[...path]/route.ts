@@ -9,12 +9,14 @@ export const dynamic = "force-dynamic";
 const router = createConnectRouter({});
 router.service(CaladoService, {
   async getHistory(req) {
-    return { readings: await fetchReadings(req.days) };
+    return { readings: await fetchReadings(req.days, "cached") };
   },
   async *replay(req) {
-    for (const r of await fetchReadings(req.days)) {
+    // Una sola lectura a Pegelonline; el resto son mensajes gRPC en cadena (no N peticiones HTTP).
+    const readings = await fetchReadings(req.days, "fresh");
+    for (const r of readings) {
       yield r;
-      await new Promise((ok) => setTimeout(ok, 35));
+      await new Promise((ok) => setTimeout(ok, 45));
     }
   },
 });

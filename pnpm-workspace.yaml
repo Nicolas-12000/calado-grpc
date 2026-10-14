@@ -1,0 +1,11 @@
+# PostCSS: Next 15 aún declara 8.4.x; forzamos parche (GHSA hasta 8.5.23+).
+overrides:
+  postcss: ">=8.5.30"
+
+allowBuilds:
+  "@bufbuild/buf": true
+  sharp: true
+
+onlyBuiltDependencies:
+  - "@bufbuild/buf"
+  - sharp

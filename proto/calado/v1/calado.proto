@@ -1,0 +1,24 @@
+syntax = "proto3";
+package calado.v1;
+
+// Una medición del nivel del Rin en Kaub (cm). ts = segundos Unix.
+message Reading {
+  uint32 ts = 1;
+  uint32 cm = 2;
+}
+
+message HistoryRequest {
+  uint32 days = 1; // 1..30
+}
+
+message HistoryResponse {
+  repeated Reading readings = 1;
+}
+
+// El contrato manda: backend y frontend salen de este archivo.
+service CaladoService {
+  // Unario: toda la serie de una vez.
+  rpc GetHistory(HistoryRequest) returns (HistoryResponse);
+  // Server streaming: la serie llega medición a medición (time-lapse).
+  rpc Replay(HistoryRequest) returns (stream Reading);
+}

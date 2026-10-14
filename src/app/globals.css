@@ -436,3 +436,177 @@ button:disabled {
     transition: none;
   }
 }
+
+/* ——— Móvil / tablet ——— */
+
+.hero-mark {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 899px) {
+  .grid {
+    gap: 20px;
+  }
+
+  /* Gráfica y acciones primero; contexto y vara debajo */
+  .panel {
+    order: 1;
+  }
+
+  .side {
+    order: 2;
+  }
+}
+
+@media (max-width: 599px) {
+  .slide {
+    padding: 0 max(16px, env(safe-area-inset-left, 0px)) max(40px, env(safe-area-inset-bottom, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  .slide::after {
+    display: none;
+  }
+
+  .hero {
+    padding: max(20px, env(safe-area-inset-top, 0px)) 0 20px;
+  }
+
+  h1 {
+    flex-direction: column;
+    gap: 8px;
+    font-size: clamp(2.4rem, 13vw, 3.25rem);
+  }
+
+  .lead {
+    font-size: 1rem;
+    margin-top: 12px;
+    padding: 0 4px;
+  }
+
+  .panel,
+  .gauge-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .steps {
+    font-size: 0.95rem;
+  }
+
+  .steps li {
+    padding: 0 0 14px 48px;
+  }
+
+  .steps li::before {
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+  }
+
+  .gauge-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .gauge {
+    width: min(100%, 132px);
+  }
+
+  .level .n {
+    font-size: 2.6rem;
+  }
+
+  .actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .rpc-strip {
+    font-size: 0.72rem;
+    padding: 8px 10px;
+    line-height: 1.5;
+  }
+
+  .rpc-strip code {
+    font-size: 0.68rem;
+    word-break: break-word;
+  }
+
+  .chart {
+    touch-action: none;
+    border-radius: 12px;
+  }
+
+  .hover {
+    font-size: 0.88rem;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stats div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  .stats span {
+    font-size: 1.5rem;
+  }
+
+  .stats small {
+    text-align: right;
+    max-width: 55%;
+  }
+
+  .size {
+    font-size: 0.88rem;
+  }
+
+  .src {
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .hero-mark {
+    width: 64px;
+    height: 64px;
+  }
+
+  .slide {
+    padding: 0 24px 48px;
+  }
+
+  .actions button {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 12rem;
+  }
+
+  .gauge-card {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 900px) {
+  .hero-mark {
+    width: 72px;
+    height: 72px;
+  }
+}

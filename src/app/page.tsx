@@ -6,7 +6,7 @@ export default function Page() {
     <main className="slide">
       <header className="hero">
         <h1>
-          <Mark size={72} /> Calado
+          <Mark className="hero-mark" /> Calado
         </h1>
         <p className="lead">
           En Kaub el Rin se cruza a pie cuando baja de 78 cm. Ese número frena barcazas, acero y gasolina en

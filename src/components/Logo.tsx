@@ -1,6 +1,12 @@
-export function Mark({ size = 48 }: { size?: number }) {
+export function Mark({ size = 48, className }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+    <svg
+      className={className}
+      width={className ? undefined : size}
+      height={className ? undefined : size}
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+    >
       <rect width="48" height="48" rx="12" fill="var(--lake-dark)" />
       <path
         d="M14 8v32M14 12h7M14 20h7M14 28h7M14 36h7"

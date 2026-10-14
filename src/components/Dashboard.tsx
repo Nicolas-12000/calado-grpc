@@ -12,25 +12,32 @@ import Chart from "./Chart";
 import Gauge from "./Gauge";
 
 type Mode = "loading" | "idle" | "streaming";
+type View = "month" | "week";
+
+/** Máximo que admite el .proto y Pegelonline en esta UI. */
+const DAYS_MONTH = 30;
+const DAYS_WEEK = 7;
 
 export default function Dashboard() {
   const [data, setData] = useState<Reading[]>([]);
   const [mode, setMode] = useState<Mode>("loading");
+  const [view, setView] = useState<View>("month");
   const [error, setError] = useState("");
 
-  const run = async (stream: boolean) => {
+  const run = async (opts: { stream: boolean; days: number; view: View }) => {
     setError("");
     setData([]);
-    setMode(stream ? "streaming" : "loading");
+    setView(opts.view);
+    setMode(opts.stream ? "streaming" : "loading");
     try {
-      if (stream) {
+      if (opts.stream) {
         const acc: Reading[] = [];
-        for await (const r of calado.replay({ days: 14 })) {
+        for await (const r of calado.replay({ days: opts.days })) {
           acc.push(r);
           setData([...acc]);
         }
       } else {
-        setData((await calado.getHistory({ days: 14 })).readings);
+        setData((await calado.getHistory({ days: opts.days })).readings);
       }
     } catch (e) {
       setError(`No llegan los datos del Rin. Reintenta en unos segundos. (${(e as Error).message})`);
@@ -39,7 +46,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    void run(false);
+    void run({ stream: false, days: DAYS_MONTH, view: "month" });
   }, []);
 
   const last = data.at(-1);
@@ -62,10 +69,10 @@ export default function Dashboard() {
             <b>Contrato:</b> un <code>.proto</code> define las dos llamadas.
           </li>
           <li>
-            <b>Unario:</b> pide 14 días de una vez.
+            <b>Unario:</b> el último mes (~30 días) en una sola respuesta.
           </li>
           <li>
-            <b>Streaming:</b> el servidor envía hora a hora, como time-lapse.
+            <b>Streaming:</b> la semana en curso, medición a medición (time-lapse).
           </li>
         </ul>
         <div className="gauge-card">
@@ -84,16 +91,48 @@ export default function Dashboard() {
 
       <div className="panel">
         <div className="actions">
-          <button className="primary" disabled={busy} onClick={() => run(false)}>
-            Pedir 14 días
+          <button
+            type="button"
+            className="primary"
+            disabled={busy}
+            aria-pressed={view === "month"}
+            onClick={() => run({ stream: false, days: DAYS_MONTH, view: "month" })}
+          >
+            Pedir el mes
           </button>
-          <button className="quiet" disabled={busy} onClick={() => run(true)}>
-            Ver en streaming
+          <button
+            type="button"
+            className="quiet"
+            disabled={busy}
+            aria-pressed={view === "week"}
+            onClick={() => run({ stream: true, days: DAYS_WEEK, view: "week" })}
+          >
+            Ver la semana en streaming
           </button>
         </div>
+        {(data.length > 0 || mode !== "idle") && (
+          <p className="range-hint" aria-live="polite">
+            {view === "month"
+              ? "Últimos 30 días · respuesta unaria"
+              : "Últimos 7 días · streaming hora a hora"}
+            {mode === "streaming" && data.length > 0 && (
+              <>
+                {" "}
+                · <b>{data.length}</b> puntos
+              </>
+            )}
+          </p>
+        )}
         <Chart
           data={data}
-          placeholder={mode === "loading" ? "Cargando datos del Rin…" : "Pulsa un botón para pedir datos."}
+          spanDays={view === "month" ? DAYS_MONTH : DAYS_WEEK}
+          placeholder={
+            mode === "loading"
+              ? "Cargando el mes en el Rin…"
+              : mode === "streaming"
+                ? "Reproduciendo la semana…"
+                : "Pulsa un botón para pedir datos."
+          }
         />
         {error && <p className="error" role="alert">{error}</p>}
 

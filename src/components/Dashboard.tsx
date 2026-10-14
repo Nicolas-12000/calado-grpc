@@ -5,7 +5,8 @@ import { create, toBinary } from "@bufbuild/protobuf";
 
 import { HistoryResponseSchema, type Reading } from "@/gen/calado/v1/calado_pb";
 import { calado } from "@/lib/client";
-import { fmtDateTime } from "@/lib/format";
+import { fmtAgo, fmtDateTime } from "@/lib/format";
+import { readMonthCache, writeMonthCache } from "@/lib/month-cache";
 import { statusOf } from "@/lib/status";
 
 import Chart from "./Chart";
@@ -23,21 +24,48 @@ export default function Dashboard() {
   const [mode, setMode] = useState<Mode>("loading");
   const [view, setView] = useState<View>("month");
   const [error, setError] = useState("");
+  const [monthCachedAt, setMonthCachedAt] = useState<number | null>(null);
 
-  const run = async (opts: { stream: boolean; days: number; view: View }) => {
+  const loadMonth = async (force: boolean) => {
+    setError("");
+    setView("month");
+    setMonthCachedAt(null);
+
+    if (!force) {
+      const hit = readMonthCache(DAYS_MONTH);
+      if (hit) {
+        setData(hit.readings);
+        setMonthCachedAt(hit.at);
+        setMode("idle");
+        return;
+      }
+    }
+
+    setData([]);
+    setMode("loading");
+    try {
+      const readings = (await calado.getHistory({ days: DAYS_MONTH })).readings;
+      setData(readings);
+      writeMonthCache(DAYS_MONTH, readings);
+      setMonthCachedAt(Date.now());
+    } catch (e) {
+      setError(`No llegan los datos del Rin. Reintenta en unos segundos. (${(e as Error).message})`);
+    }
+    setMode("idle");
+  };
+
+  const runWeekStream = async () => {
     setError("");
     setData([]);
-    setView(opts.view);
-    setMode(opts.stream ? "streaming" : "loading");
+    setView("week");
+    setMonthCachedAt(null);
+    setMode("streaming");
     try {
-      if (opts.stream) {
-        const acc: Reading[] = [];
-        for await (const r of calado.replay({ days: opts.days })) {
-          acc.push(r);
-          setData([...acc]);
-        }
-      } else {
-        setData((await calado.getHistory({ days: opts.days })).readings);
+      const acc: Reading[] = [];
+      for await (const r of calado.replay({ days: DAYS_WEEK })) {
+        acc.push(r);
+        // Actualiza la UI en cada punto (≈1/h); Pegelonline ya se consultó una sola vez arriba.
+        setData([...acc]);
       }
     } catch (e) {
       setError(`No llegan los datos del Rin. Reintenta en unos segundos. (${(e as Error).message})`);
@@ -46,7 +74,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    void run({ stream: false, days: DAYS_MONTH, view: "month" });
+    void loadMonth(false);
   }, []);
 
   const last = data.at(-1);
@@ -69,10 +97,10 @@ export default function Dashboard() {
             <b>Contrato:</b> un <code>.proto</code> define las dos llamadas.
           </li>
           <li>
-            <b>Unario:</b> el último mes (~30 días) en una sola respuesta.
+            <b>Unario:</b> el mes de una vez; en el navegador se reutiliza unos días.
           </li>
           <li>
-            <b>Streaming:</b> la semana en curso, medición a medición (time-lapse).
+            <b>Streaming:</b> un solo fetch de la semana; luego el servidor suelta hora a hora por gRPC.
           </li>
         </ul>
         <div className="gauge-card">
@@ -96,7 +124,7 @@ export default function Dashboard() {
             className="primary"
             disabled={busy}
             aria-pressed={view === "month"}
-            onClick={() => run({ stream: false, days: DAYS_MONTH, view: "month" })}
+            onClick={() => loadMonth(true)}
           >
             Pedir el mes
           </button>
@@ -105,7 +133,7 @@ export default function Dashboard() {
             className="quiet"
             disabled={busy}
             aria-pressed={view === "week"}
-            onClick={() => run({ stream: true, days: DAYS_WEEK, view: "week" })}
+            onClick={() => runWeekStream()}
           >
             Ver la semana en streaming
           </button>
@@ -113,14 +141,10 @@ export default function Dashboard() {
         {(data.length > 0 || mode !== "idle") && (
           <p className="range-hint" aria-live="polite">
             {view === "month"
-              ? "Últimos 30 días · respuesta unaria"
-              : "Últimos 7 días · streaming hora a hora"}
-            {mode === "streaming" && data.length > 0 && (
-              <>
-                {" "}
-                · <b>{data.length}</b> puntos
-              </>
-            )}
+              ? `Últimos 30 días${monthCachedAt ? ` · guardado ${fmtAgo(monthCachedAt)}` : ""}`
+              : mode === "streaming"
+                ? "Semana · reproduciendo (1 sola consulta a Pegel al empezar)"
+                : "Últimos 7 días · pulsa de nuevo para refrescar la semana"}
           </p>
         )}
         <Chart

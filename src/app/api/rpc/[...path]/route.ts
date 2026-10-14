@@ -16,7 +16,7 @@ router.service(CaladoService, {
     const readings = await fetchReadings(req.days, "fresh");
     for (const r of readings) {
       yield r;
-      await new Promise((ok) => setTimeout(ok, 45));
+      await new Promise((ok) => setTimeout(ok, 28));
     }
   },
 });

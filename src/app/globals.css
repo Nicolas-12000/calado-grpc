@@ -213,6 +213,31 @@ code {
   font-weight: 700;
 }
 
+.rpc-strip {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--lake) 10%, var(--bg));
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--lake) 28%, transparent);
+}
+
+.rpc-strip code {
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+.rpc-strip b {
+  color: var(--ink);
+}
+
+.rpc-strip .sep {
+  margin: 0 0.35em;
+  opacity: 0.55;
+}
+
 button {
   font: inherit;
   font-weight: 600;

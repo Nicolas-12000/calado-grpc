@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "proto": "buf generate",
+    "lint:proto": "buf lint",
+    "typecheck": "tsc --noEmit",
     "dev": "npm run proto && next dev",
     "build": "npm run proto && next build",
     "start": "next start"

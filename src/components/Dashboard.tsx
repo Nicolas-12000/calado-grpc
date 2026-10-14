@@ -11,6 +11,7 @@ import { statusOf } from "@/lib/status";
 
 import Chart from "./Chart";
 import Gauge from "./Gauge";
+import RpcStrip, { type RpcTrace } from "./RpcStrip";
 
 type Mode = "loading" | "idle" | "streaming";
 type View = "month" | "week";
@@ -25,11 +26,13 @@ export default function Dashboard() {
   const [view, setView] = useState<View>("month");
   const [error, setError] = useState("");
   const [monthCachedAt, setMonthCachedAt] = useState<number | null>(null);
+  const [rpc, setRpc] = useState<RpcTrace | null>(null);
 
   const loadMonth = async (force: boolean) => {
     setError("");
     setView("month");
     setMonthCachedAt(null);
+    setRpc(null);
 
     if (!force) {
       const hit = readMonthCache(DAYS_MONTH);
@@ -43,11 +46,18 @@ export default function Dashboard() {
 
     setData([]);
     setMode("loading");
+    const t0 = performance.now();
     try {
       const readings = (await calado.getHistory({ days: DAYS_MONTH })).readings;
       setData(readings);
       writeMonthCache(DAYS_MONTH, readings);
       setMonthCachedAt(Date.now());
+      setRpc({
+        method: "GetHistory",
+        kind: "unary",
+        ms: Math.round(performance.now() - t0),
+        readings: readings.length,
+      });
     } catch (e) {
       setError(`No llegan los datos del Rin. Reintenta en unos segundos. (${(e as Error).message})`);
     }
@@ -59,14 +69,28 @@ export default function Dashboard() {
     setData([]);
     setView("week");
     setMonthCachedAt(null);
+    setRpc(null);
     setMode("streaming");
+    const t0 = performance.now();
     try {
       const acc: Reading[] = [];
       for await (const r of calado.replay({ days: DAYS_WEEK })) {
         acc.push(r);
-        // Actualiza la UI en cada punto (≈1/h); Pegelonline ya se consultó una sola vez arriba.
         setData([...acc]);
+        setRpc({
+          method: "Replay",
+          kind: "server_streaming",
+          ms: Math.round(performance.now() - t0),
+          readings: acc.length,
+          live: true,
+        });
       }
+      setRpc({
+        method: "Replay",
+        kind: "server_streaming",
+        ms: Math.round(performance.now() - t0),
+        readings: acc.length,
+      });
     } catch (e) {
       setError(`No llegan los datos del Rin. Reintenta en unos segundos. (${(e as Error).message})`);
     }
@@ -94,7 +118,11 @@ export default function Dashboard() {
       <div className="side">
         <ul className="steps">
           <li>
-            <b>Contrato:</b> un <code>.proto</code> define las dos llamadas.
+            <b>Contrato:</b>{" "}
+            <a href="/api/contract" target="_blank" rel="noreferrer">
+              <code>calado.proto</code>
+            </a>{" "}
+            define las dos llamadas.
           </li>
           <li>
             <b>Unario:</b> el mes de una vez; en el navegador se reutiliza unos días.
@@ -138,6 +166,7 @@ export default function Dashboard() {
             Ver la semana en streaming
           </button>
         </div>
+        <RpcStrip trace={rpc} />
         {(data.length > 0 || mode !== "idle") && (
           <p className="range-hint" aria-live="polite">
             {view === "month"

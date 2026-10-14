@@ -4,7 +4,6 @@ import { Mark } from "@/components/Logo";
 export default function Page() {
   return (
     <main className="slide">
-      <span className="tag">Programación Web · Taller gRPC</span>
       <header className="hero">
         <h1>
           <Mark size={72} /> Calado
